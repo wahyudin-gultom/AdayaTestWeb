@@ -8,7 +8,7 @@ namespace AdayaTestWeb.Helpers
     {
 
         /// <summary>
-        ///
+        /// description
         /// </summary>
         /// <typeparam name="TRequest"></typeparam>
         /// <param name="requests"></param>

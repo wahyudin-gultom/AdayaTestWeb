@@ -1,0 +1,218 @@
+﻿@{
+    ViewData["Title"] = "Generate Data";
+}
+<h1>@ViewData["Title"]</h1>
+
+<div class="container pt-5">
+    <div class="row">
+        <div class="col-12">
+            <table class="table table-bordered table-striped table-hover" id="tbl_result">
+                <thead>
+                    <tr>
+                        <th>Nama</th>
+                        <th>Jenis Kelamin</th>
+                        <th>Hobi</th>
+                        <th>Umur</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+    <div class="p5">&nbsp;</div>
+    <div class="alert alert-primary" role="alert">
+        All data that shown in above table, only for testing
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="btn-group w-25 float-start">
+                <button id="btn_trash" type="button" class="btn btn-danger bg-danger w-10 m-1" data-toggle="tooltip" data-placement="right" title="Clear" disabled>
+                    <span id="boot-icon" class="bi bi-trash"></span>
+                </button>
+
+                <button id="btn_generate" type="button" class="btn btn-primary w-10 m-1" data-toggle="tooltip" data-placement="right" title="Generate">
+                    <span class="bi bi-shuffle"></span>
+                </button>
+
+                <button id="btn_save" type="button" class="btn btn-success w-10 m-1" data-toggle="tooltip" data-placement="right" title="Submit" disabled>
+                    <span class="bi bi-save"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts
+    {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.css" />
+
+    <script type="text/javascript">
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        const charactersLength = characters.length;
+        var GeneratingResult = [];
+
+        $(document).ready(function () {
+            InitAllFields();
+
+            $("#btn_generate").click(function () {
+                GeneratingResult = GenerateData();
+                FillDataTables(GeneratingResult);
+                UpdateFieldCondition(true);
+            });
+
+            $("#btn_trash").click(function () {
+                TrashAll();
+                UpdateFieldCondition(false);
+            });
+
+            $("#btn_save").click(function () {
+                SaveGeneratingResult();
+                UpdateFieldCondition(true);
+                $('#btn_save').prop("disabled", true);
+            });
+
+        });
+
+        function InitAllFields() {
+            var data = GetData();
+            hasdata = data.length > 0;
+            if (hasdata) FillDataTables(data);
+
+            UpdateFieldCondition(hasdata);
+            $('#btn_save').prop("disabled", true);
+        }
+
+        function UpdateFieldCondition(hasdata) {
+            $('#btn_save').prop("disabled", !hasdata);
+            $('#btn_trash').prop("disabled", !hasdata);
+            $('#btn_generate').prop("disabled", hasdata);
+        }
+
+        function RemakeTable() {
+            $('#tbl_result').DataTable().destroy();
+            $('#tbl_result tbody').empty();
+        }
+
+        function TrashAll() {
+            $.ajax({
+                type: "POST",
+                url: "/home/Trash",
+                contentType: "application/json; charset=utf-8",
+                success: function (data) {
+                    alert("All data was deleted successfully!");
+                    RemakeTable();
+                },
+                failure: function (error) {
+                    console.log(error);
+                }
+            });
+        }
+
+        function FillDataTables(data) {
+
+            $('#tbl_result').dataTable({
+                "data": data,
+                "filter": false,
+                "columns": [
+                    { "data": "Nama" },
+                    { "data": "Gender" },
+                    { "data": "Hobi" },
+                    { "data": "Umur" }
+                ]
+            });
+        }
+
+        function SaveGeneratingResult() {
+            $.ajax({
+                type: "POST",
+                url: "/home/ProcessGenerateData",
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(GeneratingResult),
+                success: function (response) {
+                    console.log(response);
+                },
+                failure: function (error) {
+                    console.log(error);
+                }
+            });
+
+            alert("Save successfully!!");
+        }
+
+        function GetData() {
+            var list = [];
+            $.ajax({
+                type: "GET",
+                url: "/home/GenerateModelSample",
+                async: false,
+                success: function (data) {
+                    $.each(data, function (key, response) {
+                        var item = {
+                            "Id": response.id,
+                            "Nama": response.nama,
+                            "Gender": response.gender,
+                            "Hobi": response.hobi,
+                            "Umur": response.umur
+                        };
+
+                        list.push(item);
+                    });
+                },
+                failure: function (error) {
+                    console.log("got error when collect data to datatable from API " + error);
+                }
+            });
+
+            return list;
+        }
+
+        function GenerateData() {
+            var list = [];
+            for (var count = 0; count < 1000; count++) {
+                var item = {
+                    "Id": count + 1,
+                    "Nama": GenerateName(),
+                    "Gender": GenerateGender(),
+                    "Hobi": GenerateHobby(),
+                    "Umur": GenerateAge()
+                };
+
+                list.push(item);
+            }
+
+            return list;
+        }
+
+        function GenerateAge() {
+            var value = Randomize(23);
+            return value + 18;
+        }
+
+        function GenerateName() {
+            var result = '';
+            var counter = 0;
+            while (counter < 25) {
+                result += characters.charAt(Randomize(charactersLength));
+                counter += 1;
+            }
+
+            return result;
+        }
+
+        function GenerateGender() {
+            return Randomize(2) + 1;
+        }
+
+        function GenerateHobby() {
+            return characters.charAt(Randomize(5));
+        }
+
+        function Randomize(lastNumber) {
+            return Math.floor(Math.random() * lastNumber);
+        }
+
+    </script>
+
+}
